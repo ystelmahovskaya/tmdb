@@ -8,7 +8,7 @@ class RepositoryImpl @Inject constructor(
     private val api: TMDBApi,
 ): Repository {
 
-    override suspend fun doNetworkCall() {
+    override suspend fun getTrendingMovies() {
 
     }
 }
