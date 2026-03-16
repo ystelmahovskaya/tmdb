@@ -10,5 +10,6 @@ data class Movie(
     val voteAverage: Double,
     val voteCount: Int,
     val popularity: Double,
-    val genreIds: List<Int>
+    val genreIds: List<Int>,
+    val trailerUrl: String? = null
 )
