@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,8 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -69,15 +72,19 @@ fun DetailScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    val isWatchlisted by viewModel.isWatchlisted.collectAsStateWithLifecycle()
+
     DetailContent(
         movieState = movieState,
         isRefreshing = isRefreshing,
+        isWatchlisted = isWatchlisted,
         onBackClick = onBackClick,
         onRefresh = viewModel::refresh,
         onRetry = viewModel::retry,
         onTrailerClick = { url ->
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-        }
+        },
+        onToggleWatchlist = viewModel::toggleWatchlist
     )
 }
 
@@ -86,40 +93,58 @@ fun DetailScreen(
 fun DetailContent(
     movieState: TMDBResult<Movie>,
     isRefreshing: Boolean = false,
+    isWatchlisted: Boolean = false,
     onBackClick: () -> Unit,
     onRefresh: () -> Unit = {},
     onRetry: (() -> Unit)? = null,
-    onTrailerClick: (String) -> Unit = {}
+    onTrailerClick: (String) -> Unit = {},
+    onToggleWatchlist: () -> Unit = {}
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
+    BoxWithConstraints {
+        val isTablet = maxWidth >= 600.dp
+
+        Scaffold(
+            contentWindowInsets = WindowInsets(0),
+            topBar = {
+                TopAppBar(
+                    title = {},
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back)
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onToggleWatchlist) {
+                            Icon(
+                                imageVector = if (isWatchlisted) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                                contentDescription = if (isWatchlisted) {
+                                    stringResource(R.string.remove_from_watchlist)
+                                } else {
+                                    stringResource(R.string.add_to_watchlist)
+                                }
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = if (isTablet) MaterialTheme.colorScheme.background else Color.Transparent
+                    )
                 )
-            )
-        }
-    ) { padding ->
+            }
+        ) { padding ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = onRefresh,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier = Modifier.fillMaxSize()
         ) {
             when (movieState) {
                 is TMDBResult.Loading -> {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding),
                         contentAlignment = Alignment.Center
                     ) {
                         val loadingDesc = stringResource(R.string.loading)
@@ -133,21 +158,25 @@ fun DetailContent(
                 is TMDBResult.Error -> {
                     ErrorState(
                         message = userFriendlyMessage(movieState.exception),
-                        onRetry = onRetry
+                        onRetry = onRetry,
+                        modifier = Modifier.padding(padding)
                     )
                 }
 
                 is TMDBResult.Success -> {
-                    BoxWithConstraints {
-                        if (maxWidth >= 600.dp) {
-                            TabletMovieDetail(movie = movieState.data, onTrailerClick = onTrailerClick)
-                        } else {
-                            PhoneMovieDetail(movie = movieState.data, onTrailerClick = onTrailerClick)
-                        }
+                    if (isTablet) {
+                        TabletMovieDetail(
+                            movie = movieState.data,
+                            onTrailerClick = onTrailerClick,
+                            modifier = Modifier.padding(padding)
+                        )
+                    } else {
+                        PhoneMovieDetail(movie = movieState.data, onTrailerClick = onTrailerClick)
                     }
                 }
             }
         }
+    }
     }
 }
 
@@ -164,9 +193,13 @@ private fun PhoneMovieDetail(movie: Movie, onTrailerClick: (String) -> Unit) {
 }
 
 @Composable
-private fun TabletMovieDetail(movie: Movie, onTrailerClick: (String) -> Unit) {
+private fun TabletMovieDetail(
+    movie: Movie,
+    onTrailerClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(24.dp)
     ) {

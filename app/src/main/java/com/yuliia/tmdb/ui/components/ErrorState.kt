@@ -1,5 +1,6 @@
 package com.yuliia.tmdb.ui.components
 
+import android.R.id.message
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -25,9 +26,9 @@ import com.yuliia.tmdb.R
 
 @Composable
 fun ErrorState(
+    modifier: Modifier = Modifier,
     message: String,
-    onRetry: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onRetry: (() -> Unit)? = null
 ) {
     Column(
         modifier = modifier

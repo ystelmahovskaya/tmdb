@@ -37,7 +37,7 @@ class TrendingRemoteMediator(
     ): MediatorResult {
         val page = when (loadType) {
             LoadType.REFRESH -> 1
-            LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true) // we only append, never prepend
+            LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
             LoadType.APPEND -> {
                 val remoteKey = dao.getRemoteKey(REMOTE_KEY_ID)
                 remoteKey?.nextPage ?: return MediatorResult.Success(endOfPaginationReached = true)

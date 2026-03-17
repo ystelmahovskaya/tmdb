@@ -6,6 +6,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.yuliia.tmdb.data.local.MovieDao
 import com.yuliia.tmdb.data.local.TMDBDatabase
+import com.yuliia.tmdb.data.local.WatchlistDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,6 +35,18 @@ private val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+// v4: added watchlist table
+private val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS watchlist (
+                movieId INTEGER NOT NULL PRIMARY KEY,
+                addedAt INTEGER NOT NULL
+            )"""
+        )
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
@@ -45,12 +58,18 @@ object DatabaseModule {
             context,
             TMDBDatabase::class.java,
             "tmdb_database"
-        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
     }
 
     @Provides
     @Singleton
     fun provideMovieDao(database: TMDBDatabase): MovieDao {
         return database.movieDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideWatchlistDao(database: TMDBDatabase): WatchlistDao {
+        return database.watchlistDao()
     }
 }

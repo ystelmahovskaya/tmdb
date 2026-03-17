@@ -7,6 +7,8 @@ import androidx.paging.PagingData
 import androidx.paging.map
 import android.util.Log
 import com.yuliia.tmdb.data.local.MovieDao
+import com.yuliia.tmdb.data.local.WatchlistDao
+import com.yuliia.tmdb.data.local.WatchlistEntity
 import kotlin.coroutines.cancellation.CancellationException
 import com.yuliia.tmdb.data.local.toDomain
 import com.yuliia.tmdb.data.local.toEntity
@@ -27,7 +29,8 @@ import javax.inject.Inject
 
 class RepositoryImpl @Inject constructor(
     private val api: TMDBApi,
-    private val dao: MovieDao
+    private val dao: MovieDao,
+    private val watchlistDao: WatchlistDao
 ) : Repository {
 
     // Room is the single source of truth; RemoteMediator handles network -> Room sync
@@ -69,6 +72,8 @@ class RepositoryImpl @Inject constructor(
                 val remote = fetchMovieDetail(movieId)
                 dao.insertMovie(remote.toEntity())
                 emit(TMDBResult.Success(remote))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 if (cached == null) {
                     emit(TMDBResult.Error(e))
@@ -94,6 +99,26 @@ class RepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.w("RepositoryImpl", "Failed to load trailer for movie $movieId", e)
             null
+        }
+    }
+
+    // watchlist is local-only — no network layer, Room is the source of truth
+    override fun getWatchlist(): Flow<List<Movie>> {
+        return watchlistDao.getWatchlistMovies().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override fun isWatchlisted(movieId: Int): Flow<Boolean> {
+        return watchlistDao.isWatchlisted(movieId)
+    }
+
+    override suspend fun toggleWatchlist(movieId: Int) {
+        val exists = watchlistDao.isWatchlistedSync(movieId)
+        if (exists) {
+            watchlistDao.removeFromWatchlist(movieId)
+        } else {
+            watchlistDao.addToWatchlist(WatchlistEntity(movieId = movieId, addedAt = System.currentTimeMillis()))
         }
     }
 

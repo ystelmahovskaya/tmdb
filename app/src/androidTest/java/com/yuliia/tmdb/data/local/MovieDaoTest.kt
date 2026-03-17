@@ -18,6 +18,7 @@ class MovieDaoTest {
 
     private lateinit var database: TMDBDatabase
     private lateinit var dao: MovieDao
+    private lateinit var watchlistDao: WatchlistDao
 
     @Before
     fun setUp() {
@@ -26,6 +27,7 @@ class MovieDaoTest {
             .allowMainThreadQueries()
             .build()
         dao = database.movieDao()
+        watchlistDao = database.watchlistDao()
     }
 
     @After
@@ -35,7 +37,8 @@ class MovieDaoTest {
 
     private fun entity(
         id: Int = 1,
-        title: String = "Test"
+        title: String = "Test",
+        isTrending: Boolean = false
     ) = MovieEntity(
         id = id,
         title = title,
@@ -46,7 +49,8 @@ class MovieDaoTest {
         voteAverage = 7.0,
         voteCount = 100,
         popularity = 50.0,
-        genreIds = "28"
+        genreIds = "28",
+        isTrending = isTrending
     )
 
     @Test
@@ -73,5 +77,44 @@ class MovieDaoTest {
         val movie = dao.getMovieById(1)
 
         assertEquals("New Title", movie!!.title)
+    }
+
+    @Test
+    fun clearTrendingRemovesNonWatchlistedMovies() = runTest {
+        dao.insertMovies(listOf(entity(id = 1, isTrending = true)))
+
+        dao.clearTrending()
+
+        assertNull(dao.getMovieById(1))
+    }
+
+    @Test
+    fun clearTrendingDoesNotRemoveWatchlistedMovies() = runTest {
+        dao.insertMovies(listOf(entity(id = 1, title = "Watchlisted", isTrending = true)))
+        watchlistDao.addToWatchlist(WatchlistEntity(movieId = 1, addedAt = 0))
+
+        dao.clearTrending()
+
+        val movie = dao.getMovieById(1)
+        assertNotNull(movie)
+        assertEquals("Watchlisted", movie!!.title)
+    }
+
+    @Test
+    fun clearTrendingRemovesOnlyNonWatchlistedFromMix() = runTest {
+        dao.insertMovies(
+            listOf(
+                entity(id = 1, title = "Saved", isTrending = true),
+                entity(id = 2, title = "Not Saved", isTrending = true),
+                entity(id = 3, title = "Not Trending", isTrending = false)
+            )
+        )
+        watchlistDao.addToWatchlist(WatchlistEntity(movieId = 1, addedAt = 0))
+
+        dao.clearTrending()
+
+        assertNotNull(dao.getMovieById(1))  // watchlisted, kept
+        assertNull(dao.getMovieById(2))     // trending only, deleted
+        assertNotNull(dao.getMovieById(3))  // not trending, untouched
     }
 }

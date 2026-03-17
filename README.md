@@ -1,38 +1,37 @@
 # TMDB
 
-An Android app for browsing trending movies, searching by title, and viewing details — built with Jetpack Compose and clean architecture.
+A movie browsing app built with Jetpack Compose. Search movies, save them to your watchlist, watch trailers — works offline too.
 
 ## Setup
 
-You'll need a TMDB API key to run the app. It's free:
+You'll need a free TMDB API key:
 
-1. Create an account at [themoviedb.org](https://www.themoviedb.org/)
+1. Sign up at [themoviedb.org](https://www.themoviedb.org/)
 2. Go to Settings > API > Request an API Key
-3. Add your key to `local.properties` in the project root:
+3. Add it to `local.properties`:
 
 ```properties
 TMDB_API_KEY=your_api_key_here
 ```
 
-That's it — build and run.
+Build and run.
 
-## Tech stack
+## What it does
 
-- **UI:** Jetpack Compose, Material 3, Coil
-- **Architecture:** Clean Architecture, MVVM
-- **Networking:** Retrofit, Kotlinx Serialization, OkHttp
-- **Local storage:** Room (offline cache for trending + movie details)
-- **Pagination:** Paging 3 with RemoteMediator (trending) and PagingSource (search)
+- **Trending** infinite scroll of this week's trending movies, cached locally
+- **Search** find movies by title, debounced so it doesn't spam the API
+- **Details** ratings, overview, release date, and a "Watch Trailer" button that opens YouTube
+- **Watchlist** save movies locally, swipe to remove. Syncs across screens in real time via Room
+- **Offline** trending movies and details load from cache when there's no network
+- **Tablet** adaptive layout with side-by-side poster + info on wide screens
+
+## Tech
+
+- **UI:** Jetpack Compose, Material 3, Coil for images
+- **Architecture:** Clean Architecture / MVVM with use cases
+- **Network:** Retrofit + Kotlinx Serialization, retry with exponential backoff
+- **Persistence:** Room with migrations, RemoteMediator for trending pagination
+- **Pagination:** Paging 3  RemoteMediator for trending (offline-capable), PagingSource for search
 - **DI:** Hilt
-- **Navigation:** Jetpack Navigation Compose
-- **Testing:** JUnit, MockK, Compose UI tests
-
-## Features
-
-- Browse trending movies with infinite scroll
-- Search movies by title with debounced input
-- Movie detail screen with rating, overview, and YouTube trailer link
-- Offline support — cached trending movies and details load without network
-- Pull-to-refresh on detail screen
-- Adaptive layout for phones and tablets
-- Error states with retry
+- **Navigation:** Compose Navigation with bottom bar (Trending / Watchlist)
+- **Testing:** JUnit + MockK for unit tests, Compose UI tests for screens and navigation

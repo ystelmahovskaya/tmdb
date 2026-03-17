@@ -5,20 +5,27 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yuliia.tmdb.domain.model.Movie
 import com.yuliia.tmdb.domain.useCase.GetMovieDetailUseCase
+import com.yuliia.tmdb.domain.useCase.IsWatchlistedUseCase
+import com.yuliia.tmdb.domain.useCase.ToggleWatchlistUseCase
 import com.yuliia.tmdb.ui.navigation.Screen
 import com.yuliia.tmdb.util.TMDBResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val getMovieDetail: GetMovieDetailUseCase
+    private val getMovieDetail: GetMovieDetailUseCase,
+    private val isWatchlistedUseCase: IsWatchlistedUseCase,
+    private val toggleWatchlistUseCase: ToggleWatchlistUseCase
 ) : ViewModel() {
 
     private val movieId: Int? = savedStateHandle.get<Int>(Screen.ARG_MOVIE_ID)
@@ -28,6 +35,11 @@ class DetailViewModel @Inject constructor(
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
+    // Room Flow — auto-updates when watchlist changes from any screen
+    val isWatchlisted: StateFlow<Boolean> = movieId?.let { id ->
+        isWatchlistedUseCase(id).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    } ?: MutableStateFlow(false)
 
     private var loadJob: Job? = null
 
@@ -50,12 +62,17 @@ class DetailViewModel @Inject constructor(
         movieId?.let { loadMovie(it, forceRefresh = true) }
     }
 
+    fun toggleWatchlist() {
+        movieId?.let { id ->
+            viewModelScope.launch { toggleWatchlistUseCase(id) }
+        }
+    }
+
     private fun loadMovie(id: Int, forceRefresh: Boolean) {
         loadJob?.cancel()
         loadJob = getMovieDetail(id, forceRefresh)
             .onEach { result ->
                 _movie.value = result
-                // dismiss refresh indicator on terminal result, not on Loading
                 if (result !is TMDBResult.Loading) {
                     _isRefreshing.value = false
                 }

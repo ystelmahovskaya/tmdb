@@ -156,4 +156,51 @@ class DetailScreenTest {
         composeRule.onNodeWithText("Watch Trailer").performClick()
         assertEquals("https://www.youtube.com/watch?v=abc123", clickedUrl)
     }
+
+    @Test
+    fun displaysAddToWatchlistWhenNotWatchlisted() {
+        composeRule.setContent {
+            TmdbTheme {
+                DetailContent(
+                    movieState = TMDBResult.Success(testMovie),
+                    isWatchlisted = false,
+                    onBackClick = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Add to watchlist").assertIsDisplayed()
+    }
+
+    @Test
+    fun displaysRemoveFromWatchlistWhenWatchlisted() {
+        composeRule.setContent {
+            TmdbTheme {
+                DetailContent(
+                    movieState = TMDBResult.Success(testMovie),
+                    isWatchlisted = true,
+                    onBackClick = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Remove from watchlist").assertIsDisplayed()
+    }
+
+    @Test
+    fun watchlistToggleCallsCallback() {
+        var toggled = false
+        composeRule.setContent {
+            TmdbTheme {
+                DetailContent(
+                    movieState = TMDBResult.Success(testMovie),
+                    onBackClick = {},
+                    onToggleWatchlist = { toggled = true }
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Add to watchlist").performClick()
+        assertTrue(toggled)
+    }
 }

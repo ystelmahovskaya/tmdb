@@ -2,6 +2,7 @@ package com.yuliia.tmdb.data.repository
 
 import com.yuliia.tmdb.TestData
 import com.yuliia.tmdb.data.local.MovieDao
+import com.yuliia.tmdb.data.local.WatchlistDao
 import com.yuliia.tmdb.data.local.toEntity
 import com.yuliia.tmdb.util.TMDBResult
 import io.mockk.coEvery
@@ -18,14 +19,16 @@ class RepositoryImplTest {
 
     private lateinit var api: TMDBApi
     private lateinit var dao: MovieDao
+    private lateinit var watchlistDao: WatchlistDao
     private lateinit var repository: RepositoryImpl
 
     @Before
     fun setUp() {
         api = mockk()
         dao = mockk(relaxUnitFun = true)
+        watchlistDao = mockk(relaxUnitFun = true)
         coEvery { dao.getMovieById(any()) } returns null
-        repository = RepositoryImpl(api, dao)
+        repository = RepositoryImpl(api, dao, watchlistDao)
     }
 
     @Test

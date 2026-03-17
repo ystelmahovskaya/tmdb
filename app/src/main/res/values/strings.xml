@@ -14,4 +14,10 @@
     <string name="votes_count">(%1$d votes)</string>
     <string name="rating_format">%.1f</string>
     <string name="watch_trailer">Watch Trailer</string>
+    <string name="watchlist">Watchlist</string>
+    <string name="trending">Trending</string>
+    <string name="add_to_watchlist">Add to watchlist</string>
+    <string name="remove_from_watchlist">Remove from watchlist</string>
+    <string name="watchlist_empty">Your watchlist is empty</string>
+    <string name="removed_from_watchlist">Removed from watchlist</string>
 </resources>

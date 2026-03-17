@@ -22,7 +22,8 @@ interface MovieDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMovie(movie: MovieEntity)
 
-    @Query("DELETE FROM movies WHERE isTrending = 1")
+    // keep movies that are in the watchlist so the JOIN query still returns them
+    @Query("DELETE FROM movies WHERE isTrending = 1 AND id NOT IN (SELECT movieId FROM watchlist)")
     suspend fun clearTrending()
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
